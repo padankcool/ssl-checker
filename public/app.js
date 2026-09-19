@@ -1,4 +1,4 @@
-// State Aplikasi
+﻿// State Aplikasi
 let currentResults = [];
 let filteredResults = [];
 let activeFilter = 'all';
@@ -428,7 +428,7 @@ function populateModalContent(item) {
 }
 
 // Modal Detail
-window.openDetailModal = function(index) {
+window.openDetailModal = function (index) {
   const item = currentResults[index];
   if (!item) return;
 
@@ -472,7 +472,7 @@ btnDownloadJPG.addEventListener('click', async () => {
     const link = document.createElement('a');
     const safeDomain = (item.domain || 'ssl').replace(/[^a-z0-9.-]/gi, '_');
     const now = new Date();
-    const dateStr = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}_${String(now.getHours()).padStart(2,'0')}${String(now.getMinutes()).padStart(2,'0')}`;
+    const dateStr = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}`;
     link.download = `SSL_Detail_${safeDomain}_${dateStr}.jpg`;
     link.href = canvas.toDataURL('image/jpeg', 0.92);
     link.click();
@@ -526,8 +526,8 @@ btnBulkScreenshot.addEventListener('click', async () => {
   try {
     for (let i = 0; i < total; i++) {
       const item = itemsToCapture[i];
-      const domainName = item.domain || `domain-${i+1}`;
-      
+      const domainName = item.domain || `domain-${i + 1}`;
+
       // Update info progress
       const percent = Math.round(((i + 1) / total) * 100);
       bulkProgressBarInner.style.width = `${percent}%`;
@@ -563,7 +563,7 @@ btnBulkScreenshot.addEventListener('click', async () => {
     // Download ZIP
     const link = document.createElement('a');
     const now = new Date();
-    const dateStr = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}_${String(now.getHours()).padStart(2,'0')}${String(now.getMinutes()).padStart(2,'0')}`;
+    const dateStr = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}`;
     link.download = `Bulk_SSL_Detail_Screenshots_${dateStr}.zip`;
     link.href = URL.createObjectURL(zipBlob);
     document.body.appendChild(link);
@@ -679,8 +679,8 @@ btnExportWord.addEventListener('click', async () => {
   try {
     for (let i = 0; i < total; i++) {
       const item = itemsToExport[i];
-      const domainName = item.domain || `domain-${i+1}`;
-      
+      const domainName = item.domain || `domain-${i + 1}`;
+
       // Update info progress
       const percent = Math.round(((i + 1) / total) * 100);
       bulkProgressBarInner.style.width = `${percent}%`;
@@ -784,7 +784,7 @@ btnExportWord.addEventListener('click', async () => {
               <w:sz w:val="18"/>
               <w:color w:val="1E3A8A"/>
             </w:rPr>
-            <w:t>Gambar ${i + 1}: Tangkapan Layar Detail SSL — ${xmlEscape(domainName)} (Dicek: ${xmlEscape(formattedCheckDate)})</w:t>
+            <w:t>Gambar ${i + 1}: Secreenshot hasil tes SSL — ${xmlEscape(domainName)} (Dicek: ${xmlEscape(formattedCheckDate)})</w:t>
           </w:r>
         </w:p>
 
@@ -890,7 +890,7 @@ btnExportWord.addEventListener('click', async () => {
     // Download Word Document
     const link = document.createElement('a');
     const now = new Date();
-    const dateStr = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}_${String(now.getHours()).padStart(2,'0')}${String(now.getMinutes()).padStart(2,'0')}`;
+    const dateStr = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}`;
     link.download = `Laporan_Audit_SSL_${dateStr}.docx`;
     link.href = URL.createObjectURL(docxBlob);
     document.body.appendChild(link);
@@ -942,7 +942,7 @@ btnExportExcel.addEventListener('click', async () => {
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    
+
     // Ambil filename dari header jika ada atau generate
     const now = new Date();
     const dateStr = now.toISOString().slice(0, 10).replace(/-/g, '');
