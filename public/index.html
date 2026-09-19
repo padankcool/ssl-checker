@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bulk SSL Checker & Auditor 2027 | Multi-Domain SSL Inspector</title>
+  <meta name="description" content="Aplikasi audit dan pengecekan SSL multi-domain sekaligus, validasi masa aktif hingga 2027, dan ekspor laporan ke Excel / Spreadsheet.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Navbar / Header -->
+    <header class="app-header">
+      <div class="brand">
+        <div class="logo-badge">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+          </svg>
+        </div>
+        <div>
+          <div class="brand-title-wrap">
+            <h1 class="brand-title">SSL Sentinel Pro</h1>
+            <span class="version-tag">Expiry Inspector</span>
+          </div>
+          <p class="brand-desc">Inspeksi SSL/TLS Massal Multi-Domain & Deteksi Pembaruan Tahun Ini vs Tahun Depan</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <div class="status-indicator">
+          <span class="status-dot"></span>
+          <span>Engine Online</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content Grid -->
+    <main class="main-content">
+      <!-- Input Section Card -->
+      <section class="card input-card">
+        <div class="card-header">
+          <div class="card-title-group">
+            <span class="icon-circle">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+              </svg>
+            </span>
+            <div>
+              <h2 class="card-title">Daftar Link / Domain Target</h2>
+              <p class="card-subtitle">Masukkan banyak link domain sekaligus (satu baris per domain atau pisahkan koma)</p>
+            </div>
+          </div>
+          <div class="header-btns">
+            <button id="btnSample" class="btn btn-secondary btn-sm" type="button">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+              Contoh Domain
+            </button>
+            <button id="btnClear" class="btn btn-secondary btn-sm" type="button">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+              Bersihkan
+            </button>
+          </div>
+        </div>
+
+        <div class="textarea-container">
+          <textarea 
+            id="domainInput" 
+            placeholder="Contoh input:&#10;google.com&#10;https://github.com/explore&#10;wikipedia.org&#10;tokopedia.com&#10;bca.co.id&#10;expired.badssl.com"
+            rows="6"
+            spellcheck="false"
+          ></textarea>
+          <div class="input-info-bar">
+            <span id="domainCountLabel">0 domain terdeteksi</span>
+            <label class="file-upload-btn" title="Unggah file .txt atau .csv berisi daftar domain">
+              <input type="file" id="fileUpload" accept=".txt,.csv" hidden>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+              Upload TXT / CSV
+            </label>
+          </div>
+        </div>
+
+        <div class="audit-action-bar">
+          <div class="audit-note">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+            <span>Audit mendeteksi sertifikat yang <strong>perlu diperbarui tahun ini</strong> vs yang <strong>masih aman s.d tahun depan</strong>.</span>
+          </div>
+          <button id="btnCheckSSL" class="btn btn-primary btn-lg" type="button">
+            <span class="btn-spinner" id="btnSpinner"></span>
+            <svg id="btnIconCheck" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            <span id="btnCheckText">Audit SSL Sekarang</span>
+          </button>
+        </div>
+
+        <!-- Progress bar jika sedang berjalan -->
+        <div class="progress-wrap" id="progressWrap" style="display: none;">
+          <div class="progress-bar-inner" id="progressBarInner"></div>
+        </div>
+      </section>
+
+      <!-- Metric / Statistics Dashboard (Hidden until result) -->
+      <section class="metrics-grid" id="metricsGrid" style="display: none;">
+        <div class="metric-card total">
+          <div class="metric-content">
+            <span class="metric-label">Total Diperiksa</span>
+            <span class="metric-value" id="statTotal">0</span>
+          </div>
+          <div class="metric-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+          </div>
+        </div>
+
+        <div class="metric-card success">
+          <div class="metric-content">
+            <span class="metric-label">Aman s.d Tahun Depan+</span>
+            <span class="metric-value" id="statSafeNextYear">0</span>
+          </div>
+          <div class="metric-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+          </div>
+        </div>
+
+        <div class="metric-card warning">
+          <div class="metric-content">
+            <span class="metric-label">Perlu Update Tahun Ini</span>
+            <span class="metric-value" id="statUpdateThisYear">0</span>
+          </div>
+          <div class="metric-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+          </div>
+        </div>
+
+        <div class="metric-card danger">
+          <div class="metric-content">
+            <span class="metric-label">Expired / Gagal</span>
+            <span class="metric-value" id="statExpired">0</span>
+          </div>
+          <div class="metric-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
+          </div>
+        </div>
+      </section>
+
+      <!-- Result Table Section -->
+      <section class="card table-card" id="resultsSection" style="display: none;">
+        <div class="table-toolbar">
+          <div class="toolbar-left">
+            <div class="search-box">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+              <input type="text" id="searchInput" placeholder="Cari domain atau penerbit...">
+            </div>
+            
+            <div class="filter-pills">
+              <button class="filter-btn active" data-filter="all">Semua (<span id="countAll">0</span>)</button>
+              <button class="filter-btn" data-filter="safe">Aman Tahun Depan+ (<span id="countSafe">0</span>)</button>
+              <button class="filter-btn" data-filter="update">Perlu Update Tahun Ini (<span id="countUpdate">0</span>)</button>
+              <button class="filter-btn" data-filter="expired">Expired / Error (<span id="countError">0</span>)</button>
+            </div>
+          </div>
+
+          <div class="toolbar-right">
+            <!-- EXPORT EXCEL BUTTON -->
+            <button id="btnExportExcel" class="btn btn-excel">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zM6 20V4h7v5h5v11H6z"/>
+                <path d="M8.5 13.5l2 3 2-3h1.8l-2.8 4 2.8 4.2h-1.8l-2-3-2 3H6.7l2.8-4.2-2.8-4h1.8z"/>
+              </svg>
+              Download Excel (.xlsx)
+            </button>
+            <button id="btnExportCSV" class="btn btn-secondary">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+              CSV
+            </button>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="data-table" id="dataTable">
+            <thead>
+              <tr>
+                <th style="width: 50px;">No</th>
+                <th>Domain / Host</th>
+                <th>Status Pembaruan</th>
+                <th>Status SSL</th>
+                <th>Tanggal Expired</th>
+                <th>Sisa Hari</th>
+                <th>Penerbit (Issuer)</th>
+                <th style="text-align: right; width: 100px;">Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="tableBody">
+              <!-- Populated by JS -->
+            </tbody>
+          </table>
+        </div>
+        <div class="table-footer" id="tableFooter">
+          <span id="showingCountText">Menampilkan 0 domain</span>
+        </div>
+      </section>
+    </main>
+
+    <!-- Modal Detail SSL -->
+    <div class="modal-overlay" id="detailModal" style="display: none;">
+      <div class="modal-container">
+        <div class="modal-header">
+          <div class="modal-title-wrap">
+            <span class="modal-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+            </span>
+            <div>
+              <h3 class="modal-title" id="modalDomain">example.com</h3>
+              <p class="modal-subtitle" id="modalStatusText">Detail Sertifikat SSL/TLS</p>
+            </div>
+          </div>
+          <button class="modal-close-btn" id="modalCloseBtn">&times;</button>
+        </div>
+
+        <div class="modal-body" id="modalBody">
+          <!-- Populated by JS -->
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn btn-secondary" id="modalCloseBtn2">Tutup</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
