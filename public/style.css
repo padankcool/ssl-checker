@@ -374,6 +374,18 @@ textarea:focus {
   box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
 }
 
+.btn-word {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  color: #fff;
+  box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
+}
+
+.btn-word:hover {
+  background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
+}
+
 .btn-spinner {
   display: none;
   width: 16px;

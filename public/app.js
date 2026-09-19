@@ -34,12 +34,15 @@ const countUpdate = document.getElementById('countUpdate');
 const countError = document.getElementById('countError');
 
 const btnExportExcel = document.getElementById('btnExportExcel');
+const btnExportWord = document.getElementById('btnExportWord');
 const btnBulkScreenshot = document.getElementById('btnBulkScreenshot');
 const btnExportCSV = document.getElementById('btnExportCSV');
 const btnDownloadJPG = document.getElementById('btnDownloadJPG');
 
-// Bulk Screenshot Progress Elements
+// Bulk Progress Modal Elements
 const bulkProgressModal = document.getElementById('bulkProgressModal');
+const bulkProgressTitle = document.getElementById('bulkProgressTitle');
+const bulkProgressDesc = document.getElementById('bulkProgressDesc');
 const bulkProgressBarInner = document.getElementById('bulkProgressBarInner');
 const bulkProgressDomain = document.getElementById('bulkProgressDomain');
 const bulkProgressCount = document.getElementById('bulkProgressCount');
@@ -499,6 +502,10 @@ btnBulkScreenshot.addEventListener('click', async () => {
   btnBulkScreenshot.disabled = true;
   btnBulkScreenshot.innerHTML = '<span style="display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.8s linear infinite"></span> Memproses...';
 
+  // Reset modal title & description for Bulk Screenshot
+  if (bulkProgressTitle) bulkProgressTitle.textContent = 'Bulk Screenshot JPG';
+  if (bulkProgressDesc) bulkProgressDesc.textContent = 'Mengambil screenshot detail setiap domain dan menyimpannya ke dalam file ZIP...';
+
   // Simpan status modal sebelum bulk capture
   const wasModalOpen = detailModal.style.display === 'flex';
   const prevActiveIndex = detailModal.dataset.activeIndex;
@@ -570,6 +577,333 @@ btnBulkScreenshot.addEventListener('click', async () => {
     bulkProgressModal.style.display = 'none';
     btnBulkScreenshot.disabled = false;
     btnBulkScreenshot.innerHTML = origBtnHtml;
+
+    // Kembalikan status modal semula
+    if (wasModalOpen && prevActiveIndex !== undefined && currentResults[parseInt(prevActiveIndex, 10)]) {
+      populateModalContent(currentResults[parseInt(prevActiveIndex, 10)]);
+      detailModal.style.display = 'flex';
+      detailModal.dataset.activeIndex = prevActiveIndex;
+    } else {
+      detailModal.style.display = 'none';
+    }
+  }
+});
+
+// Download Laporan Microsoft Word (.docx) 1 Halaman 1 Gambar per Domain
+btnExportWord.addEventListener('click', async () => {
+  const itemsToExport = (filteredResults && filteredResults.length > 0) ? filteredResults : currentResults;
+  if (!itemsToExport || itemsToExport.length === 0) {
+    alert('Belum ada data untuk diekspor ke Word. Lakukan audit SSL terlebih dahulu.');
+    return;
+  }
+
+  if (typeof JSZip === 'undefined') {
+    alert('Library pembuat dokumen belum siap. Silakan refresh halaman.');
+    return;
+  }
+
+  const origBtnHtml = btnExportWord.innerHTML;
+  btnExportWord.disabled = true;
+  btnExportWord.innerHTML = '<span style="display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.8s linear infinite"></span> Memproses Word...';
+
+  // Simpan status modal sebelum capture
+  const wasModalOpen = detailModal.style.display === 'flex';
+  const prevActiveIndex = detailModal.dataset.activeIndex;
+
+  // Format tanggal & waktu pengecekan
+  const checkDateObj = lastCheckedAt || new Date();
+  const months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+  const formattedCheckDate = `${checkDateObj.getDate()} ${months[checkDateObj.getMonth()]} ${checkDateObj.getFullYear()}, ${String(checkDateObj.getHours()).padStart(2, '0')}:${String(checkDateObj.getMinutes()).padStart(2, '0')}:${String(checkDateObj.getSeconds()).padStart(2, '0')} WIB`;
+
+  // Tampilkan progress modal
+  if (bulkProgressTitle) bulkProgressTitle.textContent = 'Download Laporan Word (.docx)';
+  if (bulkProgressDesc) bulkProgressDesc.textContent = 'Membuat 1 halaman per domain lengkap dengan detail data dan gambar screenshot...';
+  bulkProgressModal.style.display = 'flex';
+  bulkProgressBarInner.style.width = '0%';
+  bulkProgressCount.textContent = `0 / ${itemsToExport.length}`;
+  bulkProgressDomain.textContent = 'Menyiapkan dokumen Word...';
+
+  detailModal.style.display = 'flex';
+  const modalContainer = detailModal.querySelector('.modal-container');
+
+  const zip = new JSZip();
+  const total = itemsToExport.length;
+
+  // Helper escape karakter XML OpenXML
+  function xmlEscape(str) {
+    if (str === null || str === undefined) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&apos;');
+  }
+
+  // Helper baris tabel Word OpenXML
+  function makeWordTableRow(label, val) {
+    return `
+      <w:tr>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2600" w:type="dxa"/>
+            <w:shd w:val="clear" w:color="auto" w:fill="F1F5F9"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr><w:spacing w:before="60" w:after="60"/></w:pPr>
+            <w:r>
+              <w:rPr><w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/><w:b/><w:sz w:val="18"/><w:color w:val="334155"/></w:rPr>
+              <w:t>${xmlEscape(label)}</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="7038" w:type="dxa"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr><w:spacing w:before="60" w:after="60"/></w:pPr>
+            <w:r>
+              <w:rPr><w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/><w:sz w:val="18"/><w:color w:val="0F172A"/></w:rPr>
+              <w:t>${xmlEscape(val)}</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+      </w:tr>
+    `;
+  }
+
+  let docRelsXml = '';
+  let docBodyXml = '';
+
+  try {
+    for (let i = 0; i < total; i++) {
+      const item = itemsToExport[i];
+      const domainName = item.domain || `domain-${i+1}`;
+      
+      // Update info progress
+      const percent = Math.round(((i + 1) / total) * 100);
+      bulkProgressBarInner.style.width = `${percent}%`;
+      bulkProgressCount.textContent = `${i + 1} / ${total}`;
+      bulkProgressDomain.textContent = `Memproses: ${domainName}`;
+
+      // Render isi modal untuk domain ini
+      populateModalContent(item);
+
+      // Delay sangat singkat untuk memastikan render selesai
+      await new Promise(resolve => setTimeout(resolve, 60));
+
+      // Capture screenshot modal
+      const canvas = await html2canvas(modalContainer, {
+        backgroundColor: '#0f172a',
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        ignoreElements: (element) => {
+          return element.classList && (element.classList.contains('modal-footer') || element.classList.contains('modal-close-btn'));
+        }
+      });
+
+      const imgBase64 = canvas.toDataURL('image/jpeg', 0.90).replace(/^data:image\/jpeg;base64,/, '');
+      const imgFileName = `image${i + 1}.jpeg`;
+      zip.file(`word/media/${imgFileName}`, imgBase64, { base64: true });
+
+      // Relationship XML untuk gambar ini
+      docRelsXml += `
+        <Relationship Id="rIdImg${i + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/${imgFileName}"/>
+      `;
+
+      // Hitung dimensi gambar dalam EMUs agar pas dalam 1 halaman A4
+      const maxW = 5400000; // ~15 cm
+      const maxH = 5000000; // ~13.9 cm
+      let cx = maxW;
+      let cy = Math.round(cx * (canvas.height / canvas.width));
+      if (cy > maxH) {
+        cy = maxH;
+        cx = Math.round(cy * (canvas.width / canvas.height));
+      }
+
+      // Tentukan status audit 2027
+      const auditStatusText = item.status2027 || (item.badge === 'success' ? 'Aman s.d Tahun Depan' : (item.badge === 'warning' ? 'Perlu Update Tahun Ini' : 'Expired / Error'));
+
+      // Susun 1 halaman untuk domain ini
+      docBodyXml += `
+        <!-- Judul Halaman Domain -->
+        <w:p>
+          <w:pPr>
+            <w:jc w:val="left"/>
+            <w:spacing w:before="100" w:after="120"/>
+          </w:pPr>
+          <w:r>
+            <w:rPr>
+              <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+              <w:b/>
+              <w:sz w:val="28"/>
+              <w:color w:val="1E40AF"/>
+            </w:rPr>
+            <w:t>${i + 1}. ${xmlEscape(domainName)}</w:t>
+          </w:r>
+        </w:p>
+
+        <!-- Tabel Detail & Tanggal Dicek -->
+        <w:tbl>
+          <w:tblPr>
+            <w:tblW w:w="9638" w:type="dxa"/>
+            <w:jc w:val="center"/>
+            <w:tblBorders>
+              <w:top w:val="single" w:sz="4" w:space="0" w:color="CBD5E1"/>
+              <w:left w:val="single" w:sz="4" w:space="0" w:color="CBD5E1"/>
+              <w:bottom w:val="single" w:sz="4" w:space="0" w:color="CBD5E1"/>
+              <w:right w:val="single" w:sz="4" w:space="0" w:color="CBD5E1"/>
+              <w:insideH w:val="single" w:sz="4" w:space="0" w:color="E2E8F0"/>
+              <w:insideV w:val="single" w:sz="4" w:space="0" w:color="E2E8F0"/>
+            </w:tblBorders>
+          </w:tblPr>
+          ${makeWordTableRow('Domain / Host', domainName)}
+          ${makeWordTableRow('Tanggal & Waktu Dicek', formattedCheckDate)}
+          ${makeWordTableRow('Status Pembaruan (Audit)', auditStatusText)}
+          ${makeWordTableRow('Status Sertifikat SSL', item.statusText || '-')}
+          ${makeWordTableRow('Masa Berlaku', `${item.validFromFormatted || '-'} s.d ${item.validToFormatted || '-'} (${item.daysRemaining !== null ? item.daysRemaining + ' Hari Sisa' : '-'})`)}
+          ${makeWordTableRow('Penerbit (Issuer)', item.issuer || '-')}
+          ${makeWordTableRow('Common Name Subjek (CN)', item.subjectCN || '-')}
+          ${makeWordTableRow('Protokol & Cipher', `${item.protocol || '-'} (${item.cipher || '-'})`)}
+          ${item.error ? makeWordTableRow('Catatan Error / Diagnostik', item.error) : ''}
+        </w:tbl>
+
+        <!-- Judul Gambar Screenshot -->
+        <w:p>
+          <w:pPr>
+            <w:jc w:val="center"/>
+            <w:spacing w:before="160" w:after="100"/>
+          </w:pPr>
+          <w:r>
+            <w:rPr>
+              <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+              <w:b/>
+              <w:i/>
+              <w:sz w:val="18"/>
+              <w:color w:val="1E3A8A"/>
+            </w:rPr>
+            <w:t>Gambar ${i + 1}: Tangkapan Layar Detail SSL — ${xmlEscape(domainName)} (Dicek: ${xmlEscape(formattedCheckDate)})</w:t>
+          </w:r>
+        </w:p>
+
+        <!-- Gambar Screenshot -->
+        <w:p>
+          <w:pPr>
+            <w:jc w:val="center"/>
+            <w:spacing w:after="100"/>
+          </w:pPr>
+          <w:r>
+            <w:drawing>
+              <wp:inline distT="0" distB="0" distL="0" distR="0">
+                <wp:extent cx="${cx}" cy="${cy}"/>
+                <wp:effectExtent l="0" t="0" r="0" b="0"/>
+                <wp:docPr id="${i + 1}" name="Picture ${i + 1}"/>
+                <wp:cNvGraphicFramePr>
+                  <a:graphicFrameLocks xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" noChangeAspect="1"/>
+                </wp:cNvGraphicFramePr>
+                <a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">
+                  <a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture">
+                    <pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture">
+                      <pic:nvPicPr>
+                        <pic:cNvPr id="${i + 1}" name="${imgFileName}"/>
+                        <pic:cNvPicPr/>
+                      </pic:nvPicPr>
+                      <pic:blipFill>
+                        <a:blip r:embed="rIdImg${i + 1}"/>
+                        <a:stretch><a:fillRect/></a:stretch>
+                      </pic:blipFill>
+                      <pic:spPr>
+                        <a:xfrm><a:off x="0" y="0"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm>
+                        <a:prstGeom prst="rect"><a:avLst/></a:prstGeom>
+                      </pic:spPr>
+                    </pic:pic>
+                  </a:graphicData>
+                </a:graphic>
+              </wp:inline>
+            </w:drawing>
+          </w:r>
+        </w:p>
+      `;
+
+      // Page break jika bukan halaman terakhir
+      if (i < total - 1) {
+        docBodyXml += `
+          <w:p>
+            <w:r>
+              <w:br w:type="page"/>
+            </w:r>
+          </w:p>
+        `;
+      }
+    }
+
+    bulkProgressDomain.textContent = 'Menyusun file Word (.docx)...';
+
+    // 1. [Content_Types].xml
+    zip.file('[Content_Types].xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+  <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+  <Default Extension="xml" ContentType="application/xml"/>
+  <Default Extension="jpeg" ContentType="image/jpeg"/>
+  <Default Extension="jpg" ContentType="image/jpeg"/>
+  <Default Extension="png" ContentType="image/png"/>
+  <Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>
+</Types>`);
+
+    // 2. _rels/.rels
+    zip.file('_rels/.rels', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>
+</Relationships>`);
+
+    // 3. word/_rels/document.xml.rels
+    zip.file('word/_rels/document.xml.rels', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  ${docRelsXml}
+</Relationships>`);
+
+    // 4. word/document.xml
+    const finalDocXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"
+            xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"
+            xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing"
+            xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"
+            xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture">
+  <w:body>
+    ${docBodyXml}
+    <w:sectPr>
+      <w:pgSz w:w="11906" w:h="16838"/>
+      <w:pgMar w:top="1134" w:right="1134" w:bottom="1134" w:left="1134"/>
+    </w:sectPr>
+  </w:body>
+</w:document>`;
+
+    zip.file('word/document.xml', finalDocXml);
+
+    const docxBlob = await zip.generateAsync({
+      type: 'blob',
+      mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    });
+
+    // Download Word Document
+    const link = document.createElement('a');
+    const now = new Date();
+    const dateStr = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}_${String(now.getHours()).padStart(2,'0')}${String(now.getMinutes()).padStart(2,'0')}`;
+    link.download = `Laporan_Audit_SSL_${dateStr}.docx`;
+    link.href = URL.createObjectURL(docxBlob);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(link.href);
+  } catch (err) {
+    console.error('Gagal membuat dokumen Word:', err);
+    alert('Terjadi kesalahan saat membuat file Word: ' + err.message);
+  } finally {
+    bulkProgressModal.style.display = 'none';
+    btnExportWord.disabled = false;
+    btnExportWord.innerHTML = origBtnHtml;
 
     // Kembalikan status modal semula
     if (wasModalOpen && prevActiveIndex !== undefined && currentResults[parseInt(prevActiveIndex, 10)]) {
