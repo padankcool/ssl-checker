@@ -4,7 +4,13 @@
   "description": "Bulk SSL Checker multi-domain dengan export Excel & audit validitas 2027",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "release:patch": "node scripts/version-bump.js patch",
+    "release:minor": "node scripts/version-bump.js minor",
+    "release:major": "node scripts/version-bump.js major",
+    "versions": "node scripts/version-manager.js list",
+    "version:show": "node scripts/version-manager.js show",
+    "version:restore": "node scripts/version-manager.js restore"
   },
   "dependencies": {
     "cors": "^2.8.5",

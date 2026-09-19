@@ -5,3 +5,6 @@ yarn-debug.log*
 yarn-error.log*
 .DS_Store
 *.log
+
+# Backup sementara saat memulihkan versi (snapshot versi tetap dilacak)
+.versions/_backup-*/

@@ -1,0 +1,63 @@
+name: Version History
+
+# Berjalan otomatis setiap kali ada push ke branch utama.
+# Tugasnya: membuat tag versi otomatis + merilis catatan perubahan,
+# sehingga setiap update tersimpan dan bisa dipulihkan kembali.
+on:
+  push:
+    branches:
+      - main
+      - master
+
+permissions:
+  contents: write
+
+jobs:
+  tag-and-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Baca versi dari package.json
+        id: pkg
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Versi terdeteksi: $VERSION"
+
+      - name: Buat tag versi (jika belum ada)
+        env:
+          VERSION: ${{ steps.pkg.outputs.version }}
+        run: |
+          TAG="v${VERSION}"
+          if git rev-parse "$TAG" >/dev/null 2>&1; then
+            echo "Tag $TAG sudah ada, dilewati."
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git tag -a "$TAG" -m "Release $TAG"
+            git push origin "$TAG"
+            echo "Tag $TAG dibuat dan di-push."
+          fi
+
+      - name: Buat GitHub Release dengan catatan perubahan
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ steps.pkg.outputs.version }}
+        run: |
+          TAG="v${VERSION}"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Release $TAG sudah ada, dilewati."
+          else
+            gh release create "$TAG" \
+              --title "Release $TAG" \
+              --notes "Rilis otomatis dari push ke branch utama. Lihat CHANGELOG.md untuk detail perubahan. Untuk memulihkan versi ini: \`node scripts/version-manager.js restore ${VERSION} --apply\`"
+          fi
