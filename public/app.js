@@ -2,6 +2,7 @@
 let currentResults = [];
 let filteredResults = [];
 let activeFilter = 'all';
+let lastCheckedAt = null; // timestamp saat pengecekan terakhir
 
 // DOM Elements
 const domainInput = document.getElementById('domainInput');
@@ -33,7 +34,15 @@ const countUpdate = document.getElementById('countUpdate');
 const countError = document.getElementById('countError');
 
 const btnExportExcel = document.getElementById('btnExportExcel');
+const btnBulkScreenshot = document.getElementById('btnBulkScreenshot');
 const btnExportCSV = document.getElementById('btnExportCSV');
+const btnDownloadJPG = document.getElementById('btnDownloadJPG');
+
+// Bulk Screenshot Progress Elements
+const bulkProgressModal = document.getElementById('bulkProgressModal');
+const bulkProgressBarInner = document.getElementById('bulkProgressBarInner');
+const bulkProgressDomain = document.getElementById('bulkProgressDomain');
+const bulkProgressCount = document.getElementById('bulkProgressCount');
 
 // Modal Elements
 const detailModal = document.getElementById('detailModal');
@@ -128,6 +137,7 @@ btnCheckSSL.addEventListener('click', async () => {
 
     const res = await response.json();
     currentResults = res.data || [];
+    lastCheckedAt = new Date(); // simpan waktu pengecekan
 
     // Render Metrics
     renderMetrics(res.stats);
@@ -304,13 +314,19 @@ function renderTable(data) {
   });
 }
 
-// Modal Detail
-window.openDetailModal = function(index) {
-  const item = currentResults[index];
-  if (!item) return;
-
+// Helper: Render data detail domain ke dalam modal
+function populateModalContent(item) {
   const renewalDisplay = item.renewalStatus || item.status2027 || '-';
   const badgeType = item.badge || item.badge2027;
+
+  // Format waktu pengecekan
+  let checkedAtHtml = '';
+  if (lastCheckedAt) {
+    const opts = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+    const dateStr = lastCheckedAt.toLocaleDateString('id-ID', opts);
+    const timeStr = lastCheckedAt.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    checkedAtHtml = `<div class="checked-at-badge">🕐 Dicek pada: <strong>${dateStr}, ${timeStr} WIB</strong></div>`;
+  }
 
   modalDomain.textContent = item.domain;
   modalStatusText.textContent = `${item.statusText} • ${renewalDisplay}`;
@@ -325,6 +341,7 @@ window.openDetailModal = function(index) {
   }
 
   modalBody.innerHTML = `
+    ${checkedAtHtml}
     <div class="detail-section-title">Status Masa Aktif & Pembaruan</div>
     <div class="detail-grid">
       <div class="detail-item">
@@ -405,8 +422,16 @@ window.openDetailModal = function(index) {
       ` : ''}
     </div>
   `;
+}
 
+// Modal Detail
+window.openDetailModal = function(index) {
+  const item = currentResults[index];
+  if (!item) return;
+
+  populateModalContent(item);
   detailModal.style.display = 'flex';
+  detailModal.dataset.activeIndex = index;
 };
 
 // Close Modal
@@ -417,6 +442,144 @@ modalCloseBtn.addEventListener('click', closeModal);
 modalCloseBtn2.addEventListener('click', closeModal);
 detailModal.addEventListener('click', (e) => {
   if (e.target === detailModal) closeModal();
+});
+
+// Download Modal sebagai JPG
+btnDownloadJPG.addEventListener('click', async () => {
+  const index = parseInt(detailModal.dataset.activeIndex, 10);
+  const item = currentResults[index];
+  if (!item) return;
+
+  const origHtml = btnDownloadJPG.innerHTML;
+  btnDownloadJPG.disabled = true;
+  btnDownloadJPG.innerHTML = '<span style="display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.8s linear infinite"></span> Mengambil gambar...';
+
+  try {
+    const modalContainer = document.querySelector('.modal-container');
+    const canvas = await html2canvas(modalContainer, {
+      backgroundColor: '#0f172a',
+      scale: 2,
+      useCORS: true,
+      logging: false,
+      ignoreElements: (element) => {
+        return element.classList && (element.classList.contains('modal-footer') || element.classList.contains('modal-close-btn'));
+      }
+    });
+
+    const link = document.createElement('a');
+    const safeDomain = (item.domain || 'ssl').replace(/[^a-z0-9.-]/gi, '_');
+    const now = new Date();
+    const dateStr = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}_${String(now.getHours()).padStart(2,'0')}${String(now.getMinutes()).padStart(2,'0')}`;
+    link.download = `SSL_Detail_${safeDomain}_${dateStr}.jpg`;
+    link.href = canvas.toDataURL('image/jpeg', 0.92);
+    link.click();
+  } catch (err) {
+    console.error('Gagal mengambil screenshot:', err);
+    alert('Gagal membuat gambar: ' + err.message);
+  } finally {
+    btnDownloadJPG.disabled = false;
+    btnDownloadJPG.innerHTML = origHtml;
+  }
+});
+
+// Download Bulk Screenshot Detail (Semua Domain yang tampil sekaligus ke file .ZIP)
+btnBulkScreenshot.addEventListener('click', async () => {
+  const itemsToCapture = (filteredResults && filteredResults.length > 0) ? filteredResults : currentResults;
+  if (!itemsToCapture || itemsToCapture.length === 0) {
+    alert('Belum ada data untuk diunduh. Lakukan audit SSL terlebih dahulu.');
+    return;
+  }
+
+  if (typeof JSZip === 'undefined') {
+    alert('Library JSZip belum siap. Silakan refresh halaman.');
+    return;
+  }
+
+  const origBtnHtml = btnBulkScreenshot.innerHTML;
+  btnBulkScreenshot.disabled = true;
+  btnBulkScreenshot.innerHTML = '<span style="display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.8s linear infinite"></span> Memproses...';
+
+  // Simpan status modal sebelum bulk capture
+  const wasModalOpen = detailModal.style.display === 'flex';
+  const prevActiveIndex = detailModal.dataset.activeIndex;
+
+  // Tampilkan modal progress
+  bulkProgressModal.style.display = 'flex';
+  bulkProgressBarInner.style.width = '0%';
+  bulkProgressCount.textContent = `0 / ${itemsToCapture.length}`;
+  bulkProgressDomain.textContent = 'Menyiapkan...';
+
+  // Pastikan detailModal aktif untuk proses capture html2canvas
+  detailModal.style.display = 'flex';
+  const modalContainer = detailModal.querySelector('.modal-container');
+
+  const zip = new JSZip();
+  const total = itemsToCapture.length;
+
+  try {
+    for (let i = 0; i < total; i++) {
+      const item = itemsToCapture[i];
+      const domainName = item.domain || `domain-${i+1}`;
+      
+      // Update info progress
+      const percent = Math.round(((i + 1) / total) * 100);
+      bulkProgressBarInner.style.width = `${percent}%`;
+      bulkProgressCount.textContent = `${i + 1} / ${total}`;
+      bulkProgressDomain.textContent = domainName;
+
+      // Render isi modal untuk domain ini
+      populateModalContent(item);
+
+      // Delay sangat singkat untuk memastikan render selesai
+      await new Promise(resolve => setTimeout(resolve, 60));
+
+      // Capture screenshot modal
+      const canvas = await html2canvas(modalContainer, {
+        backgroundColor: '#0f172a',
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        ignoreElements: (element) => {
+          return element.classList && (element.classList.contains('modal-footer') || element.classList.contains('modal-close-btn'));
+        }
+      });
+
+      const imgData = canvas.toDataURL('image/jpeg', 0.92).replace(/^data:image\/jpeg;base64,/, '');
+      const safeDomain = domainName.replace(/[^a-z0-9.-]/gi, '_');
+      const filename = `${String(i + 1).padStart(2, '0')}_${safeDomain}.jpg`;
+      zip.file(filename, imgData, { base64: true });
+    }
+
+    bulkProgressDomain.textContent = 'Mengompres file ZIP...';
+    const zipBlob = await zip.generateAsync({ type: 'blob' });
+
+    // Download ZIP
+    const link = document.createElement('a');
+    const now = new Date();
+    const dateStr = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}_${String(now.getHours()).padStart(2,'0')}${String(now.getMinutes()).padStart(2,'0')}`;
+    link.download = `Bulk_SSL_Detail_Screenshots_${dateStr}.zip`;
+    link.href = URL.createObjectURL(zipBlob);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(link.href);
+  } catch (err) {
+    console.error('Gagal membuat bulk screenshot:', err);
+    alert('Terjadi kesalahan saat membuat bulk screenshot: ' + err.message);
+  } finally {
+    bulkProgressModal.style.display = 'none';
+    btnBulkScreenshot.disabled = false;
+    btnBulkScreenshot.innerHTML = origBtnHtml;
+
+    // Kembalikan status modal semula
+    if (wasModalOpen && prevActiveIndex !== undefined && currentResults[parseInt(prevActiveIndex, 10)]) {
+      populateModalContent(currentResults[parseInt(prevActiveIndex, 10)]);
+      detailModal.style.display = 'flex';
+      detailModal.dataset.activeIndex = prevActiveIndex;
+    } else {
+      detailModal.style.display = 'none';
+    }
+  }
 });
 
 // Export Excel (.xlsx) melalui server
