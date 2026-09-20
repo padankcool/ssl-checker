@@ -2,6 +2,13 @@
 
 Semua catatan perubahan penting pada aplikasi SSL Checker.
 
+## [1.0.3] - 2026-09-20
+
+- **Update:** Tambah status Belum Diperbarui pada pilihan status SSL di export Excel
+- **Commit:** `408e142` (branch: `main`)
+- **Berkas snapshot:** `.versions/1.0.3/`
+- **Pulihkan versi ini:** `node scripts/version-manager.js restore 1.0.3 --apply`
+
 ## [1.0.2] - 2026-09-20
 
 - **Update:** Fix: urutan hasil pengecekan SSL 100% sama sesuai input user
