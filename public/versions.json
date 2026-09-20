@@ -1,0 +1,12 @@
+{
+  "current": "1.0.1",
+  "versions": [
+    {
+      "version": "1.0.1",
+      "date": "2026-09-20",
+      "message": "Tambah output status SSL OK atau Error di export Excel",
+      "commit": "d111d51",
+      "restore": "node scripts/version-manager.js restore 1.0.1 --apply"
+    }
+  ]
+}
